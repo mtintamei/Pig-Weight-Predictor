@@ -93,7 +93,34 @@ mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
 # ------------------------------
-# 2. Streamlit App UI
+# 2. Interactive Prediction
+# ------------------------------
+st.subheader("🔍 Predict a Pig's End Weight")
+start_weight = st.number_input("Start Weight (kg)", min_value=10.0, max_value=60.0, value=30.0)
+total_feed = st.number_input("Total Feed Intake (kg)", min_value=100.0, max_value=250.0, value=160.0)
+days = st.number_input("Days in Fattening", min_value=50, max_value=100, value=75)
+feed_type = st.selectbox("Feed Type", options=summary_df['feed_type'].unique())
+
+if st.button("Predict End Weight"):
+    input_df = pd.DataFrame({
+        'start_weight': [start_weight],
+        'total_feed_intake_kg': [total_feed],
+        'days_in_fattening': [days],
+        'feed_type': [feed_type]
+    })
+    predicted_weight = pipeline.predict(input_df)[0]
+    st.success(f"✅ Predicted End Weight: {predicted_weight:.2f} kg")
+
+    # Optional ROI Estimator
+    st.subheader("💰 Estimate Sale Revenue")
+    price_per_kg = st.number_input("Market Price per Kg (KES)", min_value=100.0, max_value=1000.0, value=450.0)
+    est_price = predicted_weight * price_per_kg
+    st.write(f"Estimated Sale Price: **KES {est_price:,.0f}**")
+
+# ------------------------------
+
+
+# 3. Streamlit App UI
 # ------------------------------
 st.title("🐖 Pig End Weight Predictor")
 st.write("""
@@ -121,31 +148,6 @@ fig2, ax2 = plt.subplots()
 sns.scatterplot(data=summary_df, x='total_feed_intake_kg', y='end_weight', hue='feed_type', ax=ax2)
 ax2.set_title("Feed Intake vs End Weight")
 st.pyplot(fig2)
-
-# ------------------------------
-# 3. Interactive Prediction
-# ------------------------------
-st.subheader("🔍 Predict a Pig's End Weight")
-start_weight = st.number_input("Start Weight (kg)", min_value=10.0, max_value=60.0, value=30.0)
-total_feed = st.number_input("Total Feed Intake (kg)", min_value=100.0, max_value=250.0, value=160.0)
-days = st.number_input("Days in Fattening", min_value=50, max_value=100, value=75)
-feed_type = st.selectbox("Feed Type", options=summary_df['feed_type'].unique())
-
-if st.button("Predict End Weight"):
-    input_df = pd.DataFrame({
-        'start_weight': [start_weight],
-        'total_feed_intake_kg': [total_feed],
-        'days_in_fattening': [days],
-        'feed_type': [feed_type]
-    })
-    predicted_weight = pipeline.predict(input_df)[0]
-    st.success(f"✅ Predicted End Weight: {predicted_weight:.2f} kg")
-
-    # Optional ROI Estimator
-    st.subheader("💰 Estimate Sale Revenue")
-    price_per_kg = st.number_input("Market Price per Kg (KES)", min_value=100.0, max_value=1000.0, value=450.0)
-    est_price = predicted_weight * price_per_kg
-    st.write(f"Estimated Sale Price: **KES {est_price:,.0f}**")
 
 # ------------------------------
 # 4. Footer

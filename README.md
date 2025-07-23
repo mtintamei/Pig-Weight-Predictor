@@ -16,3 +16,16 @@ Fattening pigs is a costly process. Can we predict the final weight of a pig aft
 
 ## ⚠️ Disclaimer
 This model is a learning artifact. It is trained on experimental data and **should not be used for real-world livestock decision-making**. The purpose is to demonstrate data science thinking, modeling skills, and end-to-end process design.
+
+## 🧪 Model
+
+A simple **linear regression model** was trained using:
+
+```python
+Features:
+  - start_weight
+  - total_feed_intake_kg
+  - days_in_fattening
+  - feed_type (categorical)
+Target:
+  - end_weight

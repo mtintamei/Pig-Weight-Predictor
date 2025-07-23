@@ -19,7 +19,55 @@ def load_data():
     url = "https://raw.githubusercontent.com/mtintamei/Pig-Weight-Predictor/main/pig_fattening_data.csv"
     return pd.read_csv(url)
 
-summary_df = load_data()
+df = load_data()
+
+#Create a summry_df
+# Step 1: Sort the data
+df_sorted = df.sort_values(by=['ID', 't (day)'])
+
+# Step 2: Get start and end rows for each pig
+start_df = df_sorted.groupby('ID').first().reset_index()
+end_df = df_sorted.groupby('ID').last().reset_index()
+
+# Step 3: Merge the two to get a summary
+summary_df = pd.merge(
+    start_df[['ID', 't (day)', 'Wt (kg)']],
+    end_df[['ID', 't (day)', 'Wt (kg)']],
+    on='ID',
+    suffixes=('_start', '_end')
+)
+# Step 4: Sum up the feed consumed per pig during fattening
+feed_sum_df = df_sorted.groupby('ID')['FIt (kg day-1)'].sum().reset_index()
+feed_sum_df.rename(columns={'FIt (kg day-1)': 'total_feed_intake_kg'}, inplace=True)
+# Step 5: Merge the feed intake into the summary
+summary_df = summary_df.merge(feed_sum_df, on='ID')
+# Step 6: Rename columns for clarity
+summary_df.rename(columns={
+    'ID': 'pig_id',
+    't (day)_start': 'start_day_fattening',
+    't (day)_end': 'end_day_fattening',
+    'Wt (kg)_start': 'start_weight',
+    'Wt (kg)_end': 'end_weight'
+}, inplace=True)
+
+# Step 7: Add duration
+summary_df['days_in_fattening'] = summary_df['end_day_fattening'] - summary_df['start_day_fattening']
+summary_df['FCR'] = summary_df['total_feed_intake_kg'] / (summary_df['end_weight'] - summary_df['start_weight'])
+summary_df['feed_efficiency'] = (summary_df['end_weight'] - summary_df['start_weight']) / summary_df['total_feed_intake_kg']
+def label_efficiency(val):
+    if val > 0.5:
+        return 'efficient'
+    elif val > 0.3:
+        return 'moderate'
+    else:
+        return 'wasteful'
+
+summary_df['efficiency_level'] = summary_df['feed_efficiency'].apply(label_efficiency)
+import numpy as np
+
+# Assign random feed types just to test model enrichment
+feed_types = ['high_energy', 'standard', 'waste_fed']
+summary_df['feed_type'] = np.random.choice(feed_types, size=len(summary_df))
 
 # Model setup
 X = summary_df[['start_weight', 'total_feed_intake_kg', 'days_in_fattening', 'feed_type']]
